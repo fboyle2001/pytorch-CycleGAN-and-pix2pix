@@ -4,6 +4,8 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 
+from torchsummary import summary
+
 
 class CycleGANModel(BaseModel):
     """
@@ -74,12 +76,25 @@ class CycleGANModel(BaseModel):
                                         not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
         self.netG_B = networks.define_G(opt.output_nc, opt.input_nc, opt.ngf, opt.netG, opt.norm,
                                         not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
+        
+        
+        
 
         if self.isTrain:  # define discriminators
             self.netD_A = networks.define_D(opt.output_nc, opt.ndf, opt.netD,
                                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
             self.netD_B = networks.define_D(opt.input_nc, opt.ndf, opt.netD,
                                             opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
+            
+            print("netG_A")
+            print(summary(self.netG_A, (3, 128, 128)))
+            print()
+            print("netG_B")
+            print(summary(self.netG_B, (3, 128, 128)))
+            print("netD_A")
+            print(summary(self.netD_A, (3, 128, 128)))
+            print("netD_B")
+            print(summary(self.netD_B, (3, 128, 128)))
 
         if self.isTrain:
             if opt.lambda_identity > 0.0:  # only works when input and output images have the same number of channels
@@ -129,9 +144,11 @@ class CycleGANModel(BaseModel):
         """
         # Real
         pred_real = netD(real)
+        print("netD real out", pred_real.shape)
         loss_D_real = self.criterionGAN(pred_real, True)
         # Fake
         pred_fake = netD(fake.detach())
+        print("netD fake out", pred_fake.shape)
         loss_D_fake = self.criterionGAN(pred_fake, False)
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
